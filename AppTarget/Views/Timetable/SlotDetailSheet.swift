@@ -12,8 +12,7 @@ struct SlotDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedSubjectId: String?
-    @State private var plannedMinutes: Int
-    @State private var actualMinutes: Int
+    @State private var minutes: Int
     @State private var isCompleted: Bool
 
     init(slot: TimetableSlot, dateString: String, subjects: [Subject], viewModel: TimetableViewModel) {
@@ -22,17 +21,30 @@ struct SlotDetailSheet: View {
         self.subjects = subjects
         self._viewModel = State(initialValue: viewModel)
         self._selectedSubjectId = State(initialValue: slot.subjectId)
-        self._plannedMinutes = State(initialValue: slot.plannedMinutes)
-        self._actualMinutes = State(initialValue: slot.actualMinutes)
+        self._minutes = State(initialValue: slot.minutes)
         self._isCompleted = State(initialValue: slot.isCompleted)
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                completionSection
                 subjectSection
                 timeSection
-                completionSection
+
+                if slot.subjectId != nil {
+                    Section {
+                        Button(role: .destructive) {
+                            clearSlot()
+                        } label: {
+                            HStack {
+                                Spacer()
+                                Text("この時間割を削除")
+                                Spacer()
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle(selectedSubjectName)
             .navigationBarTitleDisplayMode(.inline)
@@ -89,8 +101,7 @@ struct SlotDetailSheet: View {
 
     private var timeSection: some View {
         Section("時間設定") {
-            Stepper("予定時間: \(formatMinutes(plannedMinutes))", value: $plannedMinutes, in: 15...480, step: 15)
-            Stepper("実績時間: \(formatMinutes(actualMinutes))", value: $actualMinutes, in: 0...480, step: 15)
+            Stepper("時間: \(formatMinutes(minutes))", value: $minutes, in: 0...480, step: 15)
         }
     }
 
@@ -129,12 +140,26 @@ struct SlotDetailSheet: View {
 
     private func save() {
         Task {
-            await viewModel.setSubject(for: slot.id, dateString: dateString, subjectId: selectedSubjectId)
-            await viewModel.setPlannedMinutes(for: slot.id, dateString: dateString, minutes: plannedMinutes)
-            await viewModel.setActualMinutes(for: slot.id, dateString: dateString, minutes: actualMinutes)
-            if isCompleted != slot.isCompleted {
-                await viewModel.toggleCompletion(for: slot.id, dateString: dateString)
-            }
+            await viewModel.updateSlot(
+                slotId: slot.id,
+                dateString: dateString,
+                subjectId: selectedSubjectId,
+                minutes: minutes,
+                isCompleted: isCompleted
+            )
+            dismiss()
+        }
+    }
+
+    private func clearSlot() {
+        Task {
+            await viewModel.updateSlot(
+                slotId: slot.id,
+                dateString: dateString,
+                subjectId: nil,
+                minutes: 0,
+                isCompleted: false
+            )
             dismiss()
         }
     }

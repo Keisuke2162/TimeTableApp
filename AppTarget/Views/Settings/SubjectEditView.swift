@@ -50,6 +50,7 @@ struct SubjectEditView: View {
                                         .lineLimit(1)
                                 }
                             }
+                            .buttonStyle(.borderless)
                         }
                     }
                     .padding(.vertical, 8)

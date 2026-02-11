@@ -22,7 +22,7 @@ final class DataViewModel {
         let id: String
         let name: String
         let colorIndex: Int
-        let totalActualMinutes: Int
+        let completedCount: Int
     }
 
     // MARK: - State
@@ -85,25 +85,25 @@ final class DataViewModel {
                 }
             }
 
-            // 科目ごとの累計実績時間
+            // 科目ごとの完了回数
             var statMap: [String: Int] = [:]
             for tt in timetables {
                 for slot in tt.slots where slot.isCompleted {
                     if let sid = slot.subjectId {
-                        statMap[sid, default: 0] += slot.actualMinutes
+                        statMap[sid, default: 0] += 1
                     }
                 }
             }
 
             subjectStats = subjects.compactMap { subject in
-                guard let minutes = statMap[subject.id], minutes > 0 else { return nil }
+                guard let count = statMap[subject.id], count > 0 else { return nil }
                 return SubjectStat(
                     id: subject.id,
                     name: subject.name,
                     colorIndex: subject.colorIndex,
-                    totalActualMinutes: minutes
+                    completedCount: count
                 )
-            }.sorted { $0.totalActualMinutes > $1.totalActualMinutes }
+            }.sorted { $0.completedCount > $1.completedCount }
 
         } catch {
             errorMessage = error.localizedDescription

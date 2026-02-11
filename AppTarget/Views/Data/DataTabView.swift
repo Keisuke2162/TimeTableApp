@@ -23,7 +23,7 @@ struct DataTabView: View {
 
                     // Subject Stats
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("科目別 累計時間")
+                        Text("科目別 完了回数")
                             .font(.headline)
                             .padding(.horizontal)
 
@@ -70,7 +70,7 @@ struct DataTabView: View {
 
             Spacer()
 
-            Text(formatTotalMinutes(stat.totalActualMinutes))
+            Text("\(stat.completedCount)回")
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
@@ -79,13 +79,5 @@ struct DataTabView: View {
         .padding(.horizontal, 16)
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
-    private func formatTotalMinutes(_ minutes: Int) -> String {
-        let h = minutes / 60
-        let m = minutes % 60
-        if h > 0 && m > 0 { return "\(h)h \(m)m" }
-        if h > 0 { return "\(h)h" }
-        return "\(m)m"
     }
 }

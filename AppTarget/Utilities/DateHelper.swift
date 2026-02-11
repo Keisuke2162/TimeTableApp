@@ -78,6 +78,19 @@ enum DateHelper {
         weekDates(containing: date).map { string(from: $0) }
     }
 
+    /// 指定日を起点に n 日分の日付配列を返す。
+    static func dates(from baseDate: Date, count: Int) -> [Date] {
+        let calendar = Calendar.current
+        return (0..<count).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: baseDate)
+        }
+    }
+
+    /// 指定日を起点に n 日分の日付文字列配列を返す。
+    static func dateStrings(from baseDate: Date, count: Int) -> [String] {
+        dates(from: baseDate, count: count).map { string(from: $0) }
+    }
+
     /// 指定日数前から今日までの日付文字列配列を返す（Contribution Graph 用）。
     static func dateStrings(lastDays count: Int, from baseDate: Date = Date()) -> [String] {
         let calendar = Calendar.current

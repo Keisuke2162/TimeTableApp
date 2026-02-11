@@ -10,27 +10,71 @@ struct WeekPageView: View {
     let viewModel: TimetableViewModel
     let onSlotTap: (TimetableSlot, String) -> Void
 
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(Array(dates.enumerated()), id: \.offset) { index, date in
-                let dateString = DateHelper.string(from: date)
-                let timetable = timetables.first { $0.dateString == dateString }
-                let isToday = DateHelper.todayString == dateString
-
-                DayColumnView(
-                    date: date,
-                    slots: timetable?.slots ?? [],
-                    dateString: dateString,
-                    isToday: isToday,
-                    subjects: subjects,
-                    viewModel: viewModel,
-                    onSlotTap: { slot in
-                        onSlotTap(slot, dateString)
-                    }
-                )
-            }
+    private var columnSpacing: CGFloat {
+        switch viewModel.displayMode {
+        case .oneDay: return 0
+        case .threeDays: return 6
+        case .week: return 0
         }
-        .padding(.horizontal, 4)
-        .padding(.top, 4)
+    }
+
+    private var horizontalPadding: CGFloat {
+        switch viewModel.displayMode {
+        case .oneDay: return 12
+        case .threeDays: return 4
+        case .week: return 4
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // 日付ヘッダー
+            HStack(spacing: columnSpacing) {
+                ForEach(Array(dates.enumerated()), id: \.offset) { _, date in
+                    let dateString = DateHelper.string(from: date)
+                    let isToday = DateHelper.todayString == dateString
+
+                    VStack(spacing: 2) {
+                        Text(DateHelper.dayOfWeek(from: date))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        Text(DateHelper.displayString(from: date))
+                            .font(.caption)
+                            .fontWeight(isToday ? .bold : .regular)
+                            .foregroundStyle(isToday ? .white : .primary)
+                            .frame(width: 32, height: 32)
+                            .background(isToday ? Color.accentColor : Color.clear)
+                            .clipShape(Circle())
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, 4)
+
+            // スロット部分
+            HStack(spacing: columnSpacing) {
+                ForEach(Array(dates.enumerated()), id: \.offset) { _, date in
+                    let dateString = DateHelper.string(from: date)
+                    let timetable = timetables.first { $0.dateString == dateString }
+
+                    DayColumnView(
+                        date: date,
+                        slots: timetable?.slots ?? [],
+                        dateString: dateString,
+                        subjects: subjects,
+                        displayMode: viewModel.displayMode,
+                        viewModel: viewModel,
+                        onSlotTap: { slot in
+                            onSlotTap(slot, dateString)
+                        }
+                    )
+                }
+            }
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, 8)
+            .frame(maxHeight: .infinity)
+        }
     }
 }

@@ -6,101 +6,84 @@ import Domain
 struct TimetableTabView: View {
     @State var viewModel: TimetableViewModel
     @State private var selectedSlot: TimetableSlot?
-    @State private var selectedDateString: String?
-    @State private var weekOffset: Int = 0
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                weekNavigationBar
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-
-                Divider()
-
                 weekContentView
             }
             .navigationTitle("時間割")
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(item: $selectedSlot) { slot in
-                if let dateString = selectedDateString {
-                    SlotDetailSheet(
-                        slot: slot,
-                        dateString: dateString,
-                        subjects: viewModel.subjects,
-                        viewModel: viewModel
-                    )
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.toggleDisplayMode()
+                    } label: {
+                        Image(systemName: displayModeIcon)
+                    }
                 }
+            }
+            .sheet(item: $selectedSlot) { slot in
+                SlotDetailSheet(
+                    slot: slot,
+                    dateString: slot.dateString,
+                    subjects: viewModel.subjects,
+                    viewModel: viewModel
+                )
             }
             .task {
                 await viewModel.loadInitialData()
             }
-        }
-    }
-
-    // MARK: - Week Navigation
-
-    private var weekNavigationBar: some View {
-        HStack {
-            Button {
-                Task { await viewModel.goToPreviousWeek() }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.body.weight(.medium))
-            }
-
-            Spacer()
-
-            VStack(spacing: 2) {
-                if let firstDate = viewModel.currentWeekDates.first {
-                    Text(DateHelper.monthYearString(from: firstDate))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            .alert("エラー", isPresented: showErrorAlert) {
+                Button("OK") {
+                    viewModel.errorMessage = nil
                 }
-                weekRangeText
-                    .font(.headline)
-            }
-
-            Spacer()
-
-            Button {
-                Task { await viewModel.goToNextWeek() }
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.body.weight(.medium))
+            } message: {
+                Text(viewModel.errorMessage ?? "")
             }
         }
     }
 
-    private var weekRangeText: some View {
-        Group {
-            if let first = viewModel.currentWeekDates.first,
-               let last = viewModel.currentWeekDates.last {
-                Text("\(DateHelper.displayString(from: first)) - \(DateHelper.displayString(from: last))")
-            } else {
-                Text("")
-            }
+    private var showErrorAlert: Binding<Bool> {
+        Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )
+    }
+
+    private var displayModeIcon: String {
+        switch viewModel.displayMode {
+        case .oneDay: return "1.square"
+        case .threeDays: return "3.square"
+        case .week: return "7.square"
         }
     }
 
-    // MARK: - Week Content
+    // MARK: - Content
 
     private var weekContentView: some View {
-        ScrollView(.horizontal) {
-            LazyHStack(spacing: 0) {
-                WeekPageView(
-                    timetables: viewModel.weekTimetables,
-                    dates: viewModel.currentWeekDates,
-                    subjects: viewModel.subjects,
-                    viewModel: viewModel,
-                    onSlotTap: { slot, dateString in
-                        selectedDateString = dateString
-                        selectedSlot = slot
-                    }
-                )
-                .containerRelativeFrame(.horizontal)
+        WeekPageView(
+            timetables: viewModel.weekTimetables,
+            dates: viewModel.currentDates,
+            subjects: viewModel.subjects,
+            viewModel: viewModel,
+            onSlotTap: { slot, _ in
+                selectedSlot = slot
             }
-        }
-        .scrollTargetBehavior(.paging)
+        )
+        .gesture(
+            DragGesture(minimumDistance: 50)
+                .onEnded { value in
+                    let horizontal = abs(value.translation.width)
+                    let vertical = abs(value.translation.height)
+                    guard horizontal > vertical else { return }
+
+                    if value.translation.width < 0 {
+                        Task { await viewModel.goToNext() }
+                    } else {
+                        Task { await viewModel.goToPrevious() }
+                    }
+                }
+        )
     }
 }
