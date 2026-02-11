@@ -1,0 +1,51 @@
+name: TimeTableApp
+options:
+  bundleIdPrefix: kei
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+packages:
+  Domain:
+    path: Packages/Domain
+  Infra:
+    path: Packages/Infra
+  UseCase:
+    path: Packages/UseCase
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: "8.0.0"
+
+targets:
+  TimeTableApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: AppTarget
+    dependencies:
+      - package: Domain
+      - package: Infra
+      - package: UseCase
+      - package: GoogleSignIn
+        product: GoogleSignIn
+    entitlements:
+      path: AppTarget/TimeTableApp.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: kei.timetableapp
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+    info:
+      path: AppTarget/Info.plist
+      properties:
+        GIDClientID: 993413679052-326fhtcgbovos7mekujr4bsj3m23s176.apps.googleusercontent.com
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - com.googleusercontent.apps.993413679052-326fhtcgbovos7mekujr4bsj3m23s176
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations~iphone:
+          - UIInterfaceOrientationPortrait
